@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/yonraz/gochat_messages/constants"
 	"gorm.io/gorm"
+	"github.com/lib/pq"
 )
 
 type Message struct {
@@ -20,6 +21,7 @@ type Message struct {
 
 type Conversation struct {
 	gorm.Model
-	Participants   []string       `json:"participants"`  // This should be better defined
-	Messages       []Message  `json:"messages" gorm:"foreignKey:ConversationID"`
+	Participants   pq.StringArray `json:"participants" gorm:"type:text[]"`
+	Messages       []Message    `json:"messages" gorm:"foreignKey:ConversationID"`
+
 }

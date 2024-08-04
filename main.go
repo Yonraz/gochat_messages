@@ -7,7 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	// "github.com/streadway/amqp"
+	"github.com/yonraz/gochat_messages/controllers"
 	"github.com/yonraz/gochat_messages/initializers"
+	"github.com/yonraz/gochat_messages/services"
 )
 
 func init () {
@@ -33,13 +35,11 @@ func main() {
 			log.Printf("Failed to close RabbitMQ connection: %v", err)
 		}
 	}()
-
-	// dev - insert 35 lines of mock user data
-	// services.CreateMockUsers()
-	//
+	srv := services.NewMessagesService(initializers.DB)
+	c := controllers.NewMessagesController(srv)
 
 	go startConsumers()
-
+	router.GET("/api/messages", c.GetMessages)
 
 	router.Run()
 }

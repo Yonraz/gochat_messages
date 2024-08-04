@@ -4,23 +4,24 @@ import (
 	"fmt"
 
 	"github.com/streadway/amqp"
-	"github.com/yonraz/gochat_notifications/constants"
-	"github.com/yonraz/gochat_notifications/ws"
+	"github.com/yonraz/gochat_messages/constants"
+	"github.com/yonraz/gochat_messages/initializers"
+	"github.com/yonraz/gochat_messages/services"
 )
 
 type Consumer struct {
-	wsHandler *ws.Handler
 	channel     *amqp.Channel
+	srv 		*services.MessagesService
 	queueName   string
 	routingKey  string
 	exchange    string
-	handlerFunc func(*ws.Handler, amqp.Delivery) error
+	handlerFunc func(*services.MessagesService, amqp.Delivery) error
 }
 
-func NewConsumer(wsHandler *ws.Handler, channel *amqp.Channel, queueName constants.Queues, routingKey constants.RoutingKey, exchange constants.Exchange, handlerFunc func(*ws.Handler, amqp.Delivery) error) *Consumer {
+func NewConsumer(channel *amqp.Channel, queueName constants.Queues, routingKey constants.RoutingKey, exchange constants.Exchange, handlerFunc func(*services.MessagesService, amqp.Delivery) error) *Consumer {
 	return &Consumer {
-		wsHandler: wsHandler,
 		channel: channel,
+		srv: services.NewMessagesService(initializers.DB),
 		queueName: string(queueName),
 		routingKey: string(routingKey),
 		exchange: string(exchange),
@@ -44,7 +45,7 @@ func (c *Consumer) Consume() error {
 
 	go func () {
 		for msg := range msgs {
-			if err := c.handlerFunc(c.wsHandler, msg); err != nil {
+			if err := c.handlerFunc(c.srv, msg); err != nil {
 				fmt.Printf("error consuming message %v: %v\n", msg, err)
 				msg.Nack(false, true)		
 			} else {
