@@ -9,19 +9,6 @@ import (
 
 func DeclareExchanges(channel *amqp.Channel) error {
 	err := channel.ExchangeDeclare(
-		string(constants.UserEventsExchange),
-		"topic",             
-		true,                
-		false,               
-		false, 
-		false,              
-		nil,   
-	)
-	if err != nil {
-		return err
-	}
-
-	err = channel.ExchangeDeclare(
 		string(constants.MessageEventsExchange),
 		"topic",             
 		true,                

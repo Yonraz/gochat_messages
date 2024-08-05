@@ -25,9 +25,13 @@ func NewMessageSentConsumer(channel *amqp.Channel) *Consumer {
 }
 
 func MessageSentHanlder(srv *services.MessagesService, msg amqp.Delivery) error {
-	var parsed *models.Message
-	
-	json.Unmarshal(msg.Body, &parsed)
+	var parsed models.WsMessage
+
+	if err := json.Unmarshal(msg.Body, &parsed); err != nil {
+		log.Printf("error unmarshalling message: %v\n", err.Error())
+		return err
+	}
+
 	fmt.Printf("message %v consumed on exchange %v with routing key %v\n", parsed, constants.MessageEventsExchange, constants.MessageSentKey)
 
 	conv, err := srv.GetConversation(parsed.Sender, parsed.Receiver)
@@ -41,24 +45,31 @@ func MessageSentHanlder(srv *services.MessagesService, msg amqp.Delivery) error 
 			log.Printf("error creating new conversation %v\n", err)
 			return err
 		}
+		log.Printf("Created conversation: %v", conv)
 	}
 
+	// Create a new message
 	message := &models.Message{
-		ID: parsed.ID,
-		Content: fmt.Sprintf("%v sent a message", parsed.Sender),
-		Sender: parsed.Sender,
-		Type: parsed.Type,
+		ID:             parsed.ID,
+		Content:        parsed.Content,
+		Sender:         parsed.Sender,
+		Type:           parsed.Type,
 		ConversationID: conv.ID,
-		Receiver: parsed.Receiver,
-		Read: parsed.Read,
-		Status: parsed.Status,
+		Receiver:       parsed.Receiver,
+		Read:           parsed.Read,
+		Status:         parsed.Status,
+		CreatedAt: parsed.CreatedAt,
+		UpdatedAt: parsed.UpdatedAt,
 	}
-	if parsed.Type == constants.MessageCreate {
+
+	// Add or update the message
+	switch parsed.Type {
+	case constants.MessageCreate:
 		err = srv.AddMessage(message)
-	} else if parsed.Type == constants.MessageUpdate {
+	case constants.MessageUpdate:
 		err = srv.UpdateMessage(message)
-	} else {
-		return errors.New("no valid message type was published")
+	default:
+		err = errors.New("no valid message type was published")
 	}
 	if err != nil {
 		log.Printf("error inserting message to db: %v\n", err)

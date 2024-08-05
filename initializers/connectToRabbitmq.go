@@ -6,7 +6,6 @@ import (
 
 	"github.com/streadway/amqp"
 	"github.com/yonraz/gochat_messages/events/utils"
-	"github.com/yonraz/gochat_messages/constants"
 )
 
 var RmqChannel *amqp.Channel
@@ -31,15 +30,7 @@ func ConnectToRabbitmq() {
 	}
 
 	// Declaring the topic exchange
-	err = RmqChannel.ExchangeDeclare(
-		string(constants.UserEventsExchange),
-		"topic",             
-		true,                
-		false,               
-		false, 
-		false,              
-		nil,                 
-	)
+	err = utils.DeclareExchanges(RmqChannel)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
