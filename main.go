@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/streadway/amqp"
 	"github.com/yonraz/gochat_messages/controllers"
+	"github.com/yonraz/gochat_messages/events/consumers"
 	"github.com/yonraz/gochat_messages/initializers"
 	"github.com/yonraz/gochat_messages/services"
 )
@@ -37,26 +37,10 @@ func main() {
 	}()
 	srv := services.NewMessagesService(initializers.DB)
 	c := controllers.NewMessagesController(srv)
-
-	go startConsumers()
 	router.GET("/api/messages", c.GetMessages)
 
+	messageSentConsumer := consumers.NewMessageSentConsumer(initializers.RmqChannel)
+	go messageSentConsumer.Consume()
+
 	router.Run()
-}
-
-func startConsumers() {
-	// targetConsumers := []func(*amqp.Channel) *consumers.Consumer{
-	// 	consumers.NewUserRegisteredConsumer,
-	// 	consumers.NewUserLoggedinConsumer,
-	// 	consumers.NewUserSignedoutConsumer,
-	// }
-
-	// for _, consumerFunc := range targetConsumers {
-	// 	consumer := consumerFunc(initializers.RmqChannel)
-	// 	go func(c *consumers.Consumer) {
-	// 		if err := c.Consume(); err != nil {
-	// 			log.Fatalf("Error starting consumer: %v", err)
-	// 		}
-	// 	}(consumer)
-	// }
 }

@@ -10,6 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
+type MessagesServiceInterface interface {
+    GetConversation(sender, receiver string) (*models.Conversation, error)
+    AddMessage(msg *models.Message) error
+	UpdateMessage(msg *models.Message) error
+	CreateConversation(sender string, receiver string) (*models.Conversation, error)
+}
+
 type MessagesService struct {
 	DB *gorm.DB
 }
@@ -22,7 +29,13 @@ func NewMessagesService(db *gorm.DB) *MessagesService {
 
 func (srv *MessagesService) GetConversation(sender string, receiver string) (*models.Conversation, error) {
 	var conv models.Conversation
-	query := srv.DB.WithContext(context.Background()).Where("participants @> ARRAY[?]::varchar[] AND participants @> ARRAY[?]::varchar[]", sender, receiver).First(&conv)
+	participants := pq.StringArray{sender, receiver}
+	query := srv.DB.WithContext(context.Background()).
+		Where("participants @> ? AND participants <@ ?", participants, participants).
+		Preload("Messages", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC")
+		}).
+		First(&conv)
 
 	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return nil, nil // just return empty, no need for error
@@ -65,3 +78,5 @@ func (srv *MessagesService) CreateConversation(sender string, receiver string) (
 
 	return conv, nil
 }
+
+
