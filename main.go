@@ -37,10 +37,20 @@ func main() {
 	}()
 	srv := services.NewMessagesService(initializers.DB)
 	c := controllers.NewMessagesController(srv)
-	router.GET("/api/messages", c.GetMessages)
 
 	messageSentConsumer := consumers.NewMessageSentConsumer(initializers.RmqChannel)
-	go messageSentConsumer.Consume()
+	messageUpdatedConsumer := consumers.NewMessageUpdatedConsumer(initializers.RmqChannel)
+	go func() {
+		if err := messageSentConsumer.Consume(); err != nil {
+			log.Fatalf("MessageSentConsumer failed: %v", err)
+		}
+	}()
+	go func() {
+		if err := messageUpdatedConsumer.Consume(); err != nil {
+			log.Fatalf("MessageUpdatedConsumer failed: %v", err)
+		}
+	}()
 
+	router.GET("/api/messages", c.GetMessages)
 	router.Run()
 }
