@@ -31,10 +31,14 @@ func (s *MockService) GetConversation(sender, receiver string) (*models.Conversa
 func (s *MockService) AddMessage(msg *models.Message) error {
 	return nil
 }
-func (s *MockService) UpdateMessage(msg *models.Message) error {
-	return nil
+func (s *MockService) UpdateMessage(message *models.Message) (*models.Message, error) {
+	return nil, nil
 }
 func (s *MockService) CreateConversation(sender string, receiver string) (*models.Conversation, error) {
+	return nil, nil
+}
+
+func (s *MockService) GetMessageByID(id string) (*models.Message, error) {
 	return nil, nil
 }
 

@@ -13,8 +13,9 @@ import (
 type MessagesServiceInterface interface {
     GetConversation(sender, receiver string) (*models.Conversation, error)
     AddMessage(msg *models.Message) error
-	UpdateMessage(msg *models.Message) error
 	CreateConversation(sender string, receiver string) (*models.Conversation, error)
+	UpdateMessage(message *models.Message) (*models.Message, error)
+	GetMessageByID(id string) (*models.Message, error)
 }
 
 type MessagesService struct {
@@ -38,7 +39,12 @@ func (srv *MessagesService) GetConversation(sender string, receiver string) (*mo
 		First(&conv)
 
 	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
-		return nil, nil // just return empty, no need for error
+		conversation := models.Conversation{
+			Participants: participants,
+			Messages: []models.Message{},
+		}
+		srv.DB.Save(&conversation)
+		return &conversation, nil // just return empty, no need for error
 	} else if query.Error != nil {
 		log.Printf("error querying conversation: %v\n", query.Error)
 		return nil, query.Error
@@ -56,13 +62,37 @@ func (srv *MessagesService) AddMessage(msg *models.Message) error {
 	return nil
 }
 
-func (srv *MessagesService) UpdateMessage(msg *models.Message) error {
-	err := srv.DB.Model(&models.Message{}).Where("id = ?", msg.ID).Updates(msg).Error
-	if err != nil {
-		return err
-	}
+func (s *MessagesService) UpdateMessage(message *models.Message) (*models.Message, error) {
+    var existingMessage models.Message
+    
+    // Retrieve the existing message by ID
+    result := s.DB.First(&existingMessage, "id = ?", message.ID)
+    if result.Error != nil {
+        if result.Error == gorm.ErrRecordNotFound {
+            // Handle case where the record is not found
+            return nil, nil
+        }
+        return nil, result.Error
+    }
 
-	return nil
+    // Check version
+    if existingMessage.Version != message.Version {
+        // Return an error if versions do not match
+        return nil, errors.New("version conflict")
+    }
+
+    // Update the message
+    existingMessage.Content = message.Content
+    // Add other fields if needed
+    existingMessage.Version++ // Increment the version number
+    
+    // Save the updated message
+    result = s.DB.Save(&existingMessage)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    
+    return &existingMessage, nil
 }
 
 func (srv *MessagesService) CreateConversation(sender string, receiver string) (*models.Conversation, error) {
@@ -77,6 +107,17 @@ func (srv *MessagesService) CreateConversation(sender string, receiver string) (
 	}
 
 	return conv, nil
+}
+
+func (srv *MessagesService) GetMessageByID(id string) (*models.Message, error) {
+	var msg *models.Message 
+	err := srv.DB.Where(models.Message{ID: id}).First(&msg).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return msg, nil
 }
 
 

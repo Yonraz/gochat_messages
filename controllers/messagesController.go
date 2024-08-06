@@ -23,7 +23,6 @@ func NewMessagesController(srv services.MessagesServiceInterface) *MessagesContr
 }
 
 func (c *MessagesController) GetMessages(ctx *gin.Context) {
-	log.Printf("handling request body: %v\n", ctx.Request.Body)
 	sender, senderExists := ctx.GetQuery("sender")
 	receiver, recExists := ctx.GetQuery("receiver")
 

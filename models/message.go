@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 type Message struct {
-    ID             string                `json:"id" gorm:"primaryKey"`
+    ID             string                `json:"id" gorm:"type:uuid;primary_key"`
     ConversationID uint                  `json:"conversationId" gorm:"index"`
     Content        string                `json:"content"`
     Sender         string                `json:"sender"`

@@ -23,17 +23,6 @@ func NewMessageSentConsumer(channel *amqp.Channel) *Consumer {
 	}
 }
 
-func NewMessageUpdatedConsumer(channel *amqp.Channel) *Consumer {
-	return &Consumer{
-		channel: channel,
-		srv: services.NewMessagesService(initializers.DB),
-		queueName: string(constants.MessageReadQueue),
-		routingKey: string(constants.MessageReadKey),
-		exchange: string(constants.MessageEventsExchange),
-		handlerFunc: MessageUpdatedHanlder,
-	}
-}
-
 func MessageSentHanlder(srv *services.MessagesService, msg amqp.Delivery) error {
 	var parsed models.WsMessage
 
@@ -80,54 +69,6 @@ func MessageSentHanlder(srv *services.MessagesService, msg amqp.Delivery) error 
 		log.Printf("%v\n", err)
 		return err
 	}
-	if err != nil {
-		log.Printf("error inserting message to db: %v\n", err)
-		return err
-	}
-
-	log.Printf("messages service added message %v", message)
-	return nil
-}
-
-func MessageUpdatedHanlder(srv *services.MessagesService, msg amqp.Delivery) error {
-	var parsed models.WsMessage
-
-	if err := json.Unmarshal(msg.Body, &parsed); err != nil {
-		log.Printf("error unmarshalling message: %v\n", err.Error())
-		return err
-	}
-
-	fmt.Printf("message %v consumed on exchange %v with routing key %v\n", parsed, constants.MessageEventsExchange, constants.MessageSentKey)
-
-	conv, err := srv.GetConversation(parsed.Sender, parsed.Receiver)
-	if err != nil || conv == nil {
-		log.Printf("error fetching conversation: %v\n", err)
-		return err
-	}
-
-	// Create a new message
-	message := &models.Message{
-		ID:             parsed.ID,
-		Content:        parsed.Content,
-		Sender:         parsed.Sender,
-		Type:           parsed.Type,
-		ConversationID: conv.ID,
-		Receiver:       parsed.Receiver,
-		Read:           parsed.Read,
-		Status:         parsed.Status,
-		CreatedAt: parsed.CreatedAt,
-		UpdatedAt: parsed.UpdatedAt,
-	}
-
-	// Add or update the message
-	if parsed.Type == constants.MessageUpdate{
-		err = srv.UpdateMessage(message)
-	} else {
-		err = fmt.Errorf("error processing: expected message type to be message.update, instead was: %v", parsed.Type)
-		log.Printf("%v\n", err)
-		return err
-	}
-
 	if err != nil {
 		log.Printf("error inserting message to db: %v\n", err)
 		return err
