@@ -10,10 +10,10 @@ import (
 func DeclareExchanges(channel *amqp.Channel) error {
 	err := channel.ExchangeDeclare(
 		string(constants.MessageEventsExchange),
-		"fanout",             
-		true,                
-		false,               
-		false, 
+		"topic",             
+		true,
+		false,
+		false,
 		false,              
 		nil,   
 	)

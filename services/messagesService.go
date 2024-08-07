@@ -86,16 +86,18 @@ func (s *MessagesService) UpdateMessage(message *models.Message) (*models.Messag
         return nil, errors.New("version conflict")
     }
 
-    // Update the message
-    existingMessage.Content = message.Content
-    // Add other fields if needed
-    existingMessage.Version++ // Increment the version number
+    // Update only the fields that need to be updated
+    updateFields := map[string]interface{}{
+        "content":      message.Content,
+        "read":         message.Read,
+        "status":       message.Status,
+        "type":         message.Type,
+        "created_at":   message.CreatedAt,
+        "version":      existingMessage.Version + 1,
+    }
     
     // Save the updated message
-    result = s.DB.Save(&existingMessage)
-    if result.Error != nil {
-        return nil, result.Error
-    }
+    result = s.DB.Model(&existingMessage).Updates(updateFields)
     
     return &existingMessage, nil
 }
