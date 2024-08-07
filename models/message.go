@@ -17,8 +17,8 @@ type Message struct {
     Type           constants.MessageType `json:"type"`
     Read           bool                  `json:"read"`
     Sent           bool                  `json:"sent"`
-    CreatedAt      time.Time             `json:"createdAt"`
-    UpdatedAt      time.Time             `json:"updatedAt"`
+    CreatedAt      time.Time             `json:"createdAt" gorm:"column:created_at"`
+    UpdatedAt      time.Time             `json:"updatedAt" gorm:"column:updated_at"`
     Version        uint                  `json:"version" gorm:"version"`
 }
 type WsMessage struct {

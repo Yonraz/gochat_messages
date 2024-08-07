@@ -41,10 +41,15 @@ func (srv *MessagesService) GetConversation(sender string, receiver string) (*mo
 	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		conversation := models.Conversation{
 			Participants: participants,
-			Messages: []models.Message{},
+			Messages:     []models.Message{},
 		}
-		srv.DB.Save(&conversation)
-		return &conversation, nil // just return empty, no need for error
+		
+		result := srv.DB.Create(&conversation)
+		if result.Error != nil {
+			log.Printf("error saving new conversation: %v\n", result.Error)
+			return nil, result.Error
+		}
+		return &conversation, nil 
 	} else if query.Error != nil {
 		log.Printf("error querying conversation: %v\n", query.Error)
 		return nil, query.Error
