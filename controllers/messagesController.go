@@ -53,6 +53,6 @@ func (c *MessagesController) GetMessages(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"conv" : conversation,
+		"messages" : conversation.Messages,
 	})
 }
