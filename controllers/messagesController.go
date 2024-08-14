@@ -26,12 +26,12 @@ func NewMessagesController(srv services.MessagesServiceInterface) *MessagesContr
 func (c *MessagesController) GetMessages(ctx *gin.Context) {
 	sender, senderExists := ctx.GetQuery("sender")
 	receiver, recExists := ctx.GetQuery("receiver")
-	pageQuery := ctx.DefaultQuery("page", "1")
-	page, queryErr := strconv.Atoi(pageQuery)
+	offsetQuery := ctx.DefaultQuery("offset", "0")
+	offset, queryErr := strconv.Atoi(offsetQuery)
 	if queryErr != nil {
-		log.Println("page query invalid, defaulting to 1.")
-		pageQuery = "1"
-		page = 1
+		log.Println("page query invalid, defaulting to 0.")
+		offsetQuery = "0"
+		offset = 0
 	}
 	
 
@@ -43,7 +43,7 @@ func (c *MessagesController) GetMessages(ctx *gin.Context) {
 	}
 	log.Printf("request to get messages with sender %v and receiver %v\n", sender, receiver)
 
-	conversation, err := c.msgSrv.GetConversationWithMessages(sender, receiver, page)
+	conversation, err := c.msgSrv.GetConversationWithMessages(sender, receiver, offset)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": "could not perform operation",

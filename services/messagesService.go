@@ -57,14 +57,13 @@ var conv models.Conversation
 	return &conv, nil 
 }
 
-func (srv *MessagesService) GetConversationWithMessages(sender, receiver string, page int) (*models.Conversation, error) {
+func (srv *MessagesService) GetConversationWithMessages(sender, receiver string, offset int) (*models.Conversation, error) {
 	var conv models.Conversation
 	participants := pq.StringArray{sender, receiver}
-	offset := (page-1) * MESSAGE_PAGINATION_SIZE
 	query := srv.DB.WithContext(context.Background()).
 		Where("participants @> ? AND participants <@ ?", participants, participants).
 		Preload("Messages", func(db *gorm.DB) *gorm.DB {
-			return db.Order("created_at ASC").Offset(offset).Limit(MESSAGE_PAGINATION_SIZE)
+			return db.Order("created_at desc").Offset(offset).Limit(MESSAGE_PAGINATION_SIZE)
 		}).
 		First(&conv)
 
